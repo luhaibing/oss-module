@@ -22,8 +22,8 @@ class DefaultOnDownLoadImpl : OnDownLoad {
 
     override fun downLoad(key: String, ploy: Ploy): Flow<InputStream> =
         OssManager().obtainOssEntity().map {
-            if (ploy == Ploy.OKHTTP) {
-                okHttpFetchFile(it, key)
+            if (ploy == Ploy.HTTP) {
+                httpFetchFile(it, key)
             } else {
                 defaultFetchFile(it, key)
             }
@@ -67,14 +67,14 @@ class DefaultOnDownLoadImpl : OnDownLoad {
             return deferred.await()
         }
 
-        suspend fun okHttpFetchFile(it: OssEntity, key: String): InputStream {
+        suspend fun httpFetchFile(it: OssEntity, key: String): InputStream {
             val url = OssManager.ossClient(it).presignConstrainedObjectURL(
                 it.bucket, key, it.expires
             )
-            return okHttpFetchFile(url)
+            return httpFetchFile(url)
         }
 
-        suspend fun okHttpFetchFile(url: String): InputStream {
+        suspend fun httpFetchFile(url: String): InputStream {
             val deferred = CompletableDeferred<InputStream>()
             try {
                 val result = OssManager().dataFetcher(url)

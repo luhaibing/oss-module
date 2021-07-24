@@ -19,9 +19,9 @@ import java.io.File
 
 class DefaultUpLoadImpl : UpLoad<String> {
 
-    private lateinit var prepare: suspend (String) -> String
+    private lateinit var prepare: (String) -> String
 
-    override fun prepare(block: suspend (String) -> String) {
+    override fun prepare(block: (String) -> String) {
         prepare = block
     }
 

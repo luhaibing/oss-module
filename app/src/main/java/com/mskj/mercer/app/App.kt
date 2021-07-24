@@ -8,8 +8,12 @@ import com.mskj.mercer.oss.model.OssEntity
 import com.mskj.mercer.oss.model.Ploy
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.text.SimpleDateFormat
+import java.util.*
 
 class App : Application() {
+
+    private val simpleDateFormat by lazy { SimpleDateFormat("yyyyMMdd") }
 
     override fun onCreate() {
         super.onCreate()
@@ -48,7 +52,11 @@ class App : Application() {
                 )
             }, dataFetcher = {
                 create.fetchBitmap(it).await().byteStream()
-            }, 72L.toString(), ploy = Ploy.SPLICE, splice = {
+            }, {
+                val currentTime = System.currentTimeMillis()
+                val date = Date(currentTime)
+                "android_" + simpleDateFormat.format(date) + "_" + 72 + "_" + currentTime + ".jpg"
+            }, ploy = Ploy.SPLICE, splice = {
                 // 直接拼接
                 BuildConfig.DIRECT_SPLICE_URL + it
             }

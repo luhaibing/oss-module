@@ -11,7 +11,10 @@ enum class Ploy {
      */
     DEFAULT,
 
-    OKHTTP,
+    /**
+     * 不使用 aliOss 的 api 加载图片 ,一般都是使用 okhttp 拉取图片
+     */
+    HTTP,
 
     /**
      * 直接拼接路径

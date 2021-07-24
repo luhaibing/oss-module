@@ -6,7 +6,7 @@ import java.io.File
 
 interface UpLoad<Output> {
 
-    fun prepare(block: suspend (String) -> String)
+    fun prepare(block: (String) -> String)
 
     fun upLoad(input: String): Flow<Pair<String, Output>>
 

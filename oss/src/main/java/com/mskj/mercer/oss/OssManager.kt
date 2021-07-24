@@ -30,9 +30,6 @@ class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityMa
 
     private lateinit var context: Context
 
-    // private lateinit var onOssEntityCallBack: OnOssEntityCallBack
-
-
     private var ploy: Ploy = Ploy.DEFAULT
 
     fun context() = context
@@ -42,8 +39,6 @@ class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityMa
     suspend fun dataFetcher(value: String) = dataFetcher.invoke(value)
 
     fun ploy() = ploy
-
-    private val simpleDateFormat by lazy { SimpleDateFormat("yyyyMMdd") }
 
     // glide 加载时,直接拼接路径的方式
     private var splice: ((String) -> String)? = null
@@ -88,10 +83,17 @@ class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityMa
 
     }
 
+    /**
+     * @param   onOssEntityCallBack 更新ossToken
+     * @param   dataFetcher         使用使用非default方法加载图片时,拉取图片的回调
+     * @param   convert             上传图片时的生成key
+     * @param   ploy                策略
+     * @param   splice              直接拼接图片路径时的方式
+     */
     fun initialize(
         ctx: Context, onOssEntityCallBack: OnOssEntityCallBack,
         dataFetcher: suspend (String) -> InputStream,
-        identity: String,
+        convert: (String)->String,
         ploy: Ploy = Ploy.DEFAULT,
         splice: ((String) -> String)? = null
     ) {
@@ -99,16 +101,23 @@ class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityMa
             ctx,
             onOssEntityCallBack::loadEntityForRemote,
             dataFetcher,
-            identity,
+            convert,
             ploy,
             splice
         )
     }
 
+    /**
+     * @param   onOssEntityCallBack 更新ossToken
+     * @param   dataFetcher         使用使用非default方法加载图片时,拉取图片的回调
+     * @param   convert             上传图片时的生成key
+     * @param   ploy                策略
+     * @param   splice              直接拼接图片路径时的方式
+     */
     fun initialize(
         ctx: Context, onLoadOssEntityForRemote: suspend () -> OssEntity,
         dataFetcher: suspend (String) -> InputStream,
-        identity: String,
+        convert: (String)->String,
         ploy: Ploy = Ploy.DEFAULT,
         splice: ((String) -> String)? = null
     ) {
@@ -117,11 +126,7 @@ class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityMa
         this.ploy = ploy
         this.dataFetcher = dataFetcher
         ossEntityRemoteCallBack(onLoadOssEntityForRemote)
-        prepare {
-            val currentTime = System.currentTimeMillis()
-            val date = Date(currentTime)
-            "android_" + simpleDateFormat.format(date) + "_" + identity + "_" + currentTime + ".jpg"
-        }
+        prepare(convert)
     }
 
 
