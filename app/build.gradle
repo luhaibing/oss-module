@@ -25,8 +25,10 @@ android {
             throw new FileNotFoundException("${targetFile.parentFile.absolutePath} is not exists.")
         }
         properties.load(targetFile.newDataInputStream())
-        buildConfigField("String", "BASE_URL", properties.get("BASE_URL"))
-        buildConfigField("String", "DIRECT_SPLICE_URL", properties.get("DIRECT_SPLICE_URL"))
+        // baseUrl
+        buildConfigField("String", "BASE_URL", properties.get("BASE_URL") ?: "xxxx")
+        // 加载时,使用直接拼接路径加载图片时使用, 使用 DEFAULT,OKHTTP 策略模式 时 不需要该参数
+        buildConfigField("String", "DIRECT_SPLICE_URL", properties.get("DIRECT_SPLICE_URL") ?: "xxxx")
     }
 
     buildTypes {
