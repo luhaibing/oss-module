@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+<resources>
+    <external-path
+        name="images"
+        path="."/>
+    <external-path name="external" path=""/>
+</resources>
+-->
+
+    <!--<?xml version="1.0" encoding="utf-8"?>-->
+<resources>
+
+    <external-path
+        name="root"
+        path="." />
+
+    <external-path
+        name="Pictures"
+        path="/mnt/sdcard/Pictures" />
+
+    <!--<external-path
+        name="Pictures"
+        path="." />-->
+
+    <external-path
+        name="DCIM"
+        path="/mnt/sdcard/DCIM" />
+
+    <external-path
+        name="images"
+        path="." />
+
+    <external-path
+        name="external"
+        path="" />
+
+    <!--
+    <files-path name="name" path="path" /> 物理路径相当于Context.getFilesDir() + /path/
+    <cache-path name="name" path="path" /> 物理路径相当于Context.getCacheDir() + /path/
+    <external-path name="name" path="path" /> 物理路径相当于Environment.getExternalStorageDirectory() + /path/
+    <external-files-path name="name" path="path" /> 物理路径相当于Context.getExternalFilesDir(String) + /path/
+    <external-cache-path name="name" path="path" /> 物理路径相当于Context.getExternalCacheDir() + /path/
+     -->
+</resources>
