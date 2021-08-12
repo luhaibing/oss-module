@@ -7,33 +7,109 @@ import com.alibaba.sdk.android.oss.model.GetObjectRequest
 import com.alibaba.sdk.android.oss.model.GetObjectResult
 import com.mskj.mercer.oss.OssManager
 import com.mskj.mercer.oss.action.OnDownLoad
-import com.mskj.mercer.oss.model.OssEntity
-import com.mskj.mercer.oss.model.Ploy
+import com.mskj.mercer.oss.model.*
 import com.mskj.mercer.oss.throwable.OssException
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import java.io.ByteArrayInputStream
-import java.io.InputStream
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
+import java.io.*
+
 
 class DefaultOnDownLoadImpl : OnDownLoad {
 
-    override fun downLoad(key: String): Flow<InputStream> = downLoad(key, OssManager().ploy())
+    override fun fetch(key: String?): Flow<InputStream> = fetch(key, OssManager().ploy())
 
-    override fun downLoad(key: String, ploy: Ploy): Flow<InputStream> =
-        OssManager().obtainOssEntity().map {
-            if (ploy == Ploy.HTTP) {
-                httpFetchFile(it, key)
-            } else {
-                defaultFetchFile(it, key)
+    @Suppress("DeprecatedCallableAddReplaceWith")
+    @Deprecated("recommended use Ploy.DEFAULT")
+    override fun fetch(key: String?, ploy: Ploy): Flow<InputStream> =
+        if (key.isNullOrBlank()) {
+            flow {
+                throw NullPointerException("key can not be null.")
+            }
+        } else {
+            OssManager().obtainOssEntity().map {
+                if (ploy == Ploy.HTTP) {
+                    httpFetchFile(it, key)
+                } else {
+                    defaultFetchFile(it, key, null, null)
+                }
             }
         }
 
+    override fun downLoad(
+        key: String?, file: File, interval: Interval?, onProgressListener: ((Long, Long) -> Unit)?
+    ): Flow<File> = if (key.isNullOrBlank()) {
+        flow {
+            throw NullPointerException("key can not be null.")
+        }
+    } else {
+        OssManager().obtainOssEntity().map {
+            defaultFetchFile(it, key, interval, onProgressListener)
+        }.map {
+            file.mkdirs()
+            if (file.exists()) {
+                file.delete()
+            }
+            file.writeBytes(it.readBytes())
+            file
+        }
+    }
+
+    override fun downLoadByStream(
+        key: String?, file: File, interval: Interval?, onProgressListener: ((Long, Long) -> Unit)?
+    ): Flow<File> = if (key.isNullOrBlank()) {
+        flow {
+            throw NullPointerException("key can not be null.")
+        }
+    } else {
+        OssManager().obtainOssEntity().map { ossEntity ->
+            val get = GetObjectRequest(ossEntity.bucket, key)
+            get.setProgressListener { _, currentSize, totalSize ->
+                onProgressListener?.invoke(currentSize, totalSize)
+            }
+            interval?.convert()?.let {
+                get.range = it
+            }
+            val oss = OssManager.ossClient(ossEntity)
+
+            file.mkdirs()
+            if (file.exists()) {
+                file.delete()
+            }
+            val outStream = FileOutputStream(file)
+
+            // 同步执行下载请求，返回结果
+            val getResult: GetObjectResult = oss.getObject(get)
+            // 获取文件输入流
+            val inputStream = getResult.objectContent
+            val buffer = ByteArray(1024)
+            var len: Int
+            while (inputStream.read(buffer).also { len = it } != -1) {
+                outStream.write(buffer, 0, len)
+            }
+            outStream.flush()
+            outStream.close()
+            file
+        }.flowOn(Dispatchers.IO)
+    }
+
+
     companion object {
 
-        suspend fun defaultFetchFile(it: OssEntity, key: String): InputStream {
+        suspend fun defaultFetchFile(
+            it: OssEntity,
+            key: String,
+            interval: Interval?,
+            onProgressListener: ((Long, Long) -> Unit)?
+        ): InputStream {
             val deferred = CompletableDeferred<InputStream>()
             val get = GetObjectRequest(it.bucket, key)
+            get.setProgressListener { _, currentSize, totalSize ->
+                onProgressListener?.invoke(currentSize, totalSize)
+            }
+            interval?.convert()?.let {
+                get.range = it
+            }
             OssManager.ossClient(it)
                 .asyncGetObject(
                     get,
@@ -78,6 +154,7 @@ class DefaultOnDownLoadImpl : OnDownLoad {
             val deferred = CompletableDeferred<InputStream>()
             try {
                 val result = OssManager().dataFetcher(url)
+                    ?: throw NullPointerException("result can not be null.")
                 deferred.complete(result)
             } catch (e: Exception) {
                 deferred.completeExceptionally(e)

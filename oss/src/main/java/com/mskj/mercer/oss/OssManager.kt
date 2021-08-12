@@ -15,14 +15,11 @@ import com.mskj.mercer.oss.impl.DefaultUpLoadImpl
 import com.mskj.mercer.oss.model.OssEntity
 import com.mskj.mercer.oss.model.Ploy
 import com.mskj.mercer.oss.throwable.TokenExpirationException
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
 import java.io.InputStream
-import java.text.SimpleDateFormat
-import java.util.*
 
+@Suppress("unused")
 @SuppressLint("SimpleDateFormat")
 class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityManagerImpl(),
     UpLoad<String> by DefaultUpLoadImpl(),
@@ -34,9 +31,9 @@ class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityMa
 
     fun context() = context
 
-    private lateinit var dataFetcher: suspend (String) -> InputStream
+    private var dataFetcher: (suspend (String) -> InputStream)? = null
 
-    suspend fun dataFetcher(value: String) = dataFetcher.invoke(value)
+    suspend fun dataFetcher(value: String) = dataFetcher?.invoke(value)
 
     fun ploy() = ploy
 
@@ -91,33 +88,36 @@ class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityMa
      * @param   splice              直接拼接图片路径时的方式
      */
     fun initialize(
-        ctx: Context, onOssEntityCallBack: OnOssEntityCallBack,
-        dataFetcher: suspend (String) -> InputStream,
-        convert: (String)->String,
+        ctx: Context,
+        onOssEntityCallBack: OnOssEntityCallBack,
+        convert: (String) -> String,
+        dataFetcher: (suspend (String) -> InputStream)? = null,
         ploy: Ploy = Ploy.DEFAULT,
         splice: ((String) -> String)? = null
     ) {
         initialize(
             ctx,
             onOssEntityCallBack::loadEntityForRemote,
-            dataFetcher,
             convert,
+            dataFetcher,
             ploy,
             splice
         )
     }
 
     /**
-     * @param   onOssEntityCallBack 更新ossToken
-     * @param   dataFetcher         使用使用非default方法加载图片时,拉取图片的回调
-     * @param   convert             上传图片时的生成key
-     * @param   ploy                策略
-     * @param   splice              直接拼接图片路径时的方式
+     * @param   ctx                         上下文对象
+     * @param   onLoadOssEntityForRemote    更新ossToken
+     * @param   dataFetcher                 使用使用非default方法加载图片时,拉取图片的回调
+     * @param   convert                     上传图片时的生成key
+     * @param   ploy                        策略
+     * @param   splice                      直接拼接图片路径时的方式
      */
     fun initialize(
-        ctx: Context, onLoadOssEntityForRemote: suspend () -> OssEntity,
-        dataFetcher: suspend (String) -> InputStream,
-        convert: (String)->String,
+        ctx: Context,
+        onLoadOssEntityForRemote: suspend () -> OssEntity,
+        convert: (String) -> String,
+        dataFetcher: (suspend (String) -> InputStream)? = null,
         ploy: Ploy = Ploy.DEFAULT,
         splice: ((String) -> String)? = null
     ) {
@@ -129,23 +129,22 @@ class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityMa
         prepare(convert)
     }
 
-
     /**
      * 获取 AliOssEntity
      */
     fun obtainOssEntity() = flow {
         emit(invoke().loadEntityForLocal())
     }.onEach {
-        val currentTimeMillis = System.currentTimeMillis()
-        if (it.timestamp + it.expires < currentTimeMillis) {
-            // 过期
-            throw TokenExpirationException()
+            val currentTimeMillis = System.currentTimeMillis()
+            if (it.timestamp + it.expires < currentTimeMillis) {
+                // 过期
+                throw TokenExpirationException()
+            }
+        }.catch {
+            val value = invoke().loadEntityForRemote()
+            invoke().saveResponseToLocal(value)
+            emit(value)
         }
-    }.catch {
-        val value = invoke().loadEntityForRemote()
-        invoke().saveResponseToLocal(value)
-        emit(value)
-    }
 
     fun obtainOssClient() = obtainOssEntity().map {
         ossClient(it)

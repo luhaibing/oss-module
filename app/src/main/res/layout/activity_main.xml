@@ -19,6 +19,16 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:ignore="ContentDescription" />
 
+    <TextView
+        app:layout_constraintBottom_toTopOf="@id/iv2"
+        app:layout_constraintLeft_toLeftOf="@id/iv2"
+        app:layout_constraintRight_toRightOf="@id/iv2"
+        android:text="当前进度:0%"
+        android:id="@+id/tv_progress"
+        android:visibility="visible"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
     <ImageView
         android:id="@+id/iv2"
         android:layout_width="200dp"

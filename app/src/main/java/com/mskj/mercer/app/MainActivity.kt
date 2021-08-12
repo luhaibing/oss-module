@@ -1,25 +1,22 @@
 package com.mskj.mercer.app
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.system.Os
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.datastore.preferences.core.*
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
+import com.blankj.utilcode.util.AppUtils
+import com.blankj.utilcode.util.PathUtils
 import com.blankj.utilcode.util.ToastUtils
-import com.blankj.utilcode.util.UriUtils
 import com.bumptech.glide.Glide
 import com.mskj.mercer.app.databinding.ActivityMainBinding
 import com.mskj.mercer.oss.OssManager
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -49,18 +46,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.iv2.setOnClickListener {
 
-            Glide.with(this)
+            /*Glide.with(this)
                 .load(pic5)
                 .into(binding.iv2)
 
-            /*
-            lifecycleScope.launch {
-                dataStore.edit {
-                    it[KEY_NAME] = "何桥 小清新"
-                    it[KEY_AGE] = 125
-                }
-            }
-            */
             lifecycleScope.launch {
                 OssManager()
                     .downLoad(pic5)
@@ -74,8 +63,11 @@ class MainActivity : AppCompatActivity() {
                             .load(it.readBytes())
                             .into(binding.iv2)
                     }
-            }
+            }*/
 
+            lifecycleScope.launch {
+                downLoadApk()
+            }
         }
 
         binding.iv3.setOnClickListener {
@@ -112,11 +104,46 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private val KEY_AGE = intPreferencesKey("age")
-    private val KEY_NAME = stringPreferencesKey("name")
-//    private val KEY_NAME2 = floatPreferencesKey("name")
-//    private val KEY_NAME3 = doublePreferencesKey("name")
-//    private val KEY_NAME4 = booleanPreferencesKey("name")
+    private suspend fun downLoadApk() {
+        /*OssManager().downLoad(
+            "admin_1614053139918_userid_ihkbusiness_1.0.5V6.apk",
+            file = File(
+                PathUtils.getExternalAppFilesPath(),
+                "admin_1614053139918_userid_ihkbusiness_1.0.5V6.apk"
+            ), onProgressListener = object : OnProgressListener {
+                override fun onProgress(currentSize: Long, totalSize: Long) {
+                    runOnUiThread {
+                        binding.tvProgress.text =
+                            "当前进度 : ${(currentSize.toDouble() / totalSize * 100).toInt()}%"
+                    }
+                }
+            }).catch {
+            ToastUtils.showLong("下载失败")
+        }.collect {
+            ToastUtils.showLong("下载成功")
+            AppUtils.installApp(it)
+        }*/
+
+        OssManager().downLoadByStream(
+            "admin_1614053139918_userid_ihkbusiness_1.0.5V6.apk",
+            file = File(
+                PathUtils.getExternalAppFilesPath(),
+                "${System.currentTimeMillis()}.apk"
+            )
+        ) { currentSize: Long, totalSize: Long ->
+            runOnUiThread {
+                binding.tvProgress.text =
+                    "当前进度 : ${(currentSize.toDouble() / totalSize * 100).toInt()}%"
+            }
+        }.catch {
+            it.printStackTrace()
+            ToastUtils.showLong("下载失败")
+        }.collect {
+            ToastUtils.showLong("下载成功")
+            AppUtils.installApp(it)
+        }
+
+    }
 
     val requestPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {

@@ -8,10 +8,18 @@ interface UpLoad<Output> {
 
     fun prepare(block: (String) -> String)
 
-    fun upLoad(input: String): Flow<Pair<String, Output>>
+    //////////////////////////////////////////////////////////////////
 
-    fun upLoad(input: File): Flow<Pair<String, Output>>
+    fun upLoad(
+        input: Uri?, onProgressListener: ((Long, Long) -> Unit)? = null
+    ): Flow<Pair<String, Output>>
 
-    fun upLoad(input: Uri): Flow<Pair<String, Output>>
+    fun upLoad(
+        input: File?, onProgressListener: ((Long, Long) -> Unit)? = null
+    ): Flow<Pair<String, Output>>
+
+    fun upLoad(
+        input: String?, onProgressListener: ((Long, Long) -> Unit)? = null
+    ): Flow<Pair<String, Output>>
 
 }

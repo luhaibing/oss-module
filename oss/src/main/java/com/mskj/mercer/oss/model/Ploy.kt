@@ -14,12 +14,15 @@ enum class Ploy {
     /**
      * 不使用 aliOss 的 api 加载图片 ,一般都是使用 okhttp 拉取图片
      */
+    // 推荐使用 DEFAULT
+    @Deprecated("recommended use DEFAULT")
     HTTP,
 
     /**
      * 直接拼接路径
      * 不推荐使用
      */
+    @Deprecated("recommended use DEFAULT")
     SPLICE;
 
 }

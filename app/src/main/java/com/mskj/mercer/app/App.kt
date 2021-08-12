@@ -19,7 +19,7 @@ class App : Application() {
         super.onCreate()
         val create = OssTokenApi.create()
         OssManager().initialize(
-            this, onLoadOssEntityForRemote = suspend {
+            ctx = this, onLoadOssEntityForRemote = suspend {
                 val response = create.queryOssToken("android").await()
                 Log.e("TAG", "----------- response: $response ----------- ")
                 if (response.code != 200) {
@@ -50,15 +50,10 @@ class App : Application() {
                     result.expiration,
                     System.currentTimeMillis()
                 )
-            }, dataFetcher = {
-                create.fetchBitmap(it).await().byteStream()
-            }, {
+            }, convert = {
                 val currentTime = System.currentTimeMillis()
                 val date = Date(currentTime)
                 "android_" + simpleDateFormat.format(date) + "_" + 72 + "_" + currentTime + ".jpg"
-            }, ploy = Ploy.SPLICE, splice = {
-                // 直接拼接
-                BuildConfig.DIRECT_SPLICE_URL + it
             }
         )
     }

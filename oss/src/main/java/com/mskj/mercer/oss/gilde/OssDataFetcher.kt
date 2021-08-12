@@ -30,7 +30,7 @@ class OssDataFetcher(private val key: String) : DataFetcher<InputStream> {
                 }
                 Ploy.DEFAULT -> {
                     OssManager().obtainOssEntity().map {
-                        DefaultOnDownLoadImpl.defaultFetchFile(it, key)
+                        DefaultOnDownLoadImpl.defaultFetchFile(it, key, null, null)
                     }
                 }
                 else -> {
