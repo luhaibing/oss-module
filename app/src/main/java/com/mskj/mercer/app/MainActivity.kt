@@ -105,7 +105,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun downLoadApk() {
-        /*OssManager().downLoad(
+        // 下载
+        /*
+        OssManager().downLoad(
             "admin_1614053139918_userid_ihkbusiness_1.0.5V6.apk",
             file = File(
                 PathUtils.getExternalAppFilesPath(),
@@ -122,8 +124,10 @@ class MainActivity : AppCompatActivity() {
         }.collect {
             ToastUtils.showLong("下载成功")
             AppUtils.installApp(it)
-        }*/
+        }
+        */
 
+        /*
         OssManager().downLoadByStream(
             "admin_1614053139918_userid_ihkbusiness_1.0.5V6.apk",
             file = File(
@@ -142,6 +146,7 @@ class MainActivity : AppCompatActivity() {
             ToastUtils.showLong("下载成功")
             AppUtils.installApp(it)
         }
+        */
 
     }
 
