@@ -22,4 +22,18 @@ interface UpLoad<Output> {
         input: String?, onProgressListener: ((Long, Long) -> Unit)? = null
     ): Flow<Pair<String, Output>>
 
+    //////////////////////////////////////////////////////////////////
+
+    suspend fun push(
+        input: Uri?, onProgressListener: ((Long, Long) -> Unit)? = null
+    ): Pair<String, Output>
+
+    suspend fun push(
+        input: File?, onProgressListener: ((Long, Long) -> Unit)? = null
+    ): Pair<String, Output>
+
+    suspend  fun push(
+        input: String?, onProgressListener: ((Long, Long) -> Unit)? = null
+    ): Pair<String, Output>
+
 }

@@ -5,6 +5,7 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.data.DataFetcher
 import com.mskj.mercer.oss.OssManager
 import com.mskj.mercer.oss.impl.DefaultOnDownLoadImpl
+import com.mskj.mercer.oss.impl.DefaultOnDownLoadImpl.Companion.httpFetchFile
 import com.mskj.mercer.oss.model.Ploy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,17 +26,21 @@ class OssDataFetcher(private val key: String) : DataFetcher<InputStream> {
                     flow {
                         val splice = OssManager().splice()
                             ?: throw NullPointerException("use  Ploy.SPLICE must set OssManager.splice.")
-                        emit(DefaultOnDownLoadImpl.httpFetchFile(splice.invoke(key)))
+                        emit(httpFetchFile(splice.invoke(key)))
                     }
                 }
                 Ploy.DEFAULT -> {
-                    OssManager().obtainOssEntity().map {
-                        DefaultOnDownLoadImpl.defaultFetchFile(it, key, null, null)
+                    flow {
+                        val entity = OssManager().obtainOssEntity()
+                        val result = DefaultOnDownLoadImpl.defaultFetchFile(entity, key, null, null)
+                        emit(result)
                     }
                 }
                 else -> {
-                    OssManager().obtainOssEntity().map {
-                        DefaultOnDownLoadImpl.httpFetchFile(it, key)
+                    flow {
+                        val entity = OssManager().obtainOssEntity()
+                        val result = httpFetchFile(entity, key)
+                        emit(result)
                     }
                 }
             }.catch { throwable ->

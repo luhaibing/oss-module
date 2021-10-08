@@ -161,6 +161,8 @@ class MainActivity : AppCompatActivity() {
 
     val albumLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
 
+        uri?:return@registerForActivityResult
+
         Glide.with(this)
             .load(uri)
             .into(binding.iv3)
@@ -169,7 +171,7 @@ class MainActivity : AppCompatActivity() {
 //
 
         lifecycleScope.launch {
-            OssManager().upLoad(uri)
+            /*OssManager().upLoad(uri)
                 .catch { throwable ->
                     println("11111111111")
                     ToastUtils.showLong("上传失败")
@@ -179,7 +181,14 @@ class MainActivity : AppCompatActivity() {
                 .collect { pair ->
                     println("11111111111")
                     ToastUtils.showLong("上传成功")
+                }*/
+            val push = OssManager().push(uri){ currentSize: Long, totalSize: Long ->
+                runOnUiThread {
+                    binding.tvProgress.text =
+                        "当前进度 : ${(currentSize.toDouble() / totalSize * 100).toInt()}%"
                 }
+            }
+            println("111111111111")
         }
 
     }

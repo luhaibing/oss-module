@@ -32,25 +32,48 @@ class DefaultUpLoadImpl : UpLoad<String> {
     override fun upLoad(
         input: Uri?,
         onProgressListener: ((Long, Long) -> Unit)?
-    ): Flow<Pair<String, String>> = upLoad(UriUtils.uri2File(input),onProgressListener)
+    ): Flow<Pair<String, String>> = upLoad(UriUtils.uri2File(input), onProgressListener)
 
     override fun upLoad(
         input: File?,
         onProgressListener: ((Long, Long) -> Unit)?
-    ): Flow<Pair<String, String>> = upLoad(input?.absolutePath,onProgressListener)
+    ): Flow<Pair<String, String>> = upLoad(input?.absolutePath, onProgressListener)
 
     override fun upLoad(
         input: String?,
         onProgressListener: ((Long, Long) -> Unit)?
-    ): Flow<Pair<String, String>> =
+    ): Flow<Pair<String, String>> = flow {
+        val result = push(input, onProgressListener)
+        emit(result)
+    }
+
+
+    //////////////////////////////////////////////////////////////////
+
+
+    override suspend fun push(
+        input: Uri?,
+        onProgressListener: ((Long, Long) -> Unit)?
+    ): Pair<String, String> = push(UriUtils.uri2File(input), onProgressListener)
+
+    override suspend fun push(
+        input: File?,
+        onProgressListener: ((Long, Long) -> Unit)?
+    ): Pair<String, String> = push(input?.absolutePath, onProgressListener)
+
+    override suspend fun push(
+        input: String?,
+        onProgressListener: ((Long, Long) -> Unit)?
+    ): Pair<String, String> =
         if (input.isNullOrBlank()) {
-            flow {
-                throw NullPointerException("input can not be null or blank.")
-            }
+            throw NullPointerException("input can not be null or blank.")
         } else {
-            OssManager().obtainOssEntity()
-                .upLoadAsync(input, onProgressListener)
+            OssManager().obtainOssEntity().upLoadAsync(input, onProgressListener)
         }
+
+
+    //////////////////////////////////////////////////////////////////
+
 
     private fun Flow<OssEntity>.upLoadAsync(
         input: String,
@@ -63,7 +86,7 @@ class DefaultUpLoadImpl : UpLoad<String> {
         put.setProgressCallback { _, currentSize, totalSize ->
             onProgressListener?.invoke(currentSize, totalSize)
         }
-        val ossClient = OssManager.ossClient(Motion.PUSH,it)
+        val ossClient = OssManager.ossClient(Motion.PUSH, it)
         ossClient.asyncPutObject(put,
             object : OSSCompletedCallback<PutObjectRequest, PutObjectResult> {
                 override fun onSuccess(
@@ -91,5 +114,38 @@ class DefaultUpLoadImpl : UpLoad<String> {
         deferred.await()
     }
 
+    private suspend fun OssEntity.upLoadAsync(
+        input: String,
+        onProgressListener: ((Long, Long) -> Unit)?
+    ): Pair<String, String> {
+        val deferred = CompletableDeferred<Pair<String, String>>()
+        val key = prepare(input)
+
+        val put = PutObjectRequest(bucket, key, input)
+        put.setProgressCallback { _, currentSize, totalSize ->
+            onProgressListener?.invoke(currentSize, totalSize)
+        }
+        val ossClient = OssManager.ossClient(Motion.PUSH, this)
+        ossClient.asyncPutObject(put,
+            object : OSSCompletedCallback<PutObjectRequest, PutObjectResult> {
+                override fun onSuccess(
+                    request: PutObjectRequest?,
+                    result: PutObjectResult?
+                ) {
+                    deferred.complete(input to key)
+                }
+
+                override fun onFailure(
+                    request: PutObjectRequest,
+                    clientException: ClientException,
+                    serviceException: ServiceException
+                ) {
+                    deferred.completeExceptionally(
+                        OssException(request, clientException, serviceException)
+                    )
+                }
+            })
+        return deferred.await()
+    }
 
 }

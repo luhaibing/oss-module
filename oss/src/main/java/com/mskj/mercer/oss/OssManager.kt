@@ -16,7 +16,6 @@ import com.mskj.mercer.oss.model.Motion
 import com.mskj.mercer.oss.model.OssEntity
 import com.mskj.mercer.oss.model.Ploy
 import com.mskj.mercer.oss.throwable.TokenExpirationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import java.io.InputStream
 
@@ -148,22 +147,23 @@ class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityMa
     /**
      * 获取 AliOssEntity
      */
-    fun obtainOssEntity() = flow {
-        emit(invoke().loadEntityForLocal())
-    }.onEach {
+    suspend fun obtainOssEntity(): OssEntity {
+        var entity = invoke().loadEntityForLocal()
+        // 验证是否过期
         val currentTimeMillis = System.currentTimeMillis()
-        if (it.timestamp + it.expires < currentTimeMillis) {
+        if (entity.timestamp + entity.expires < currentTimeMillis) {
             // 过期
-            throw TokenExpirationException()
+            entity = invoke().loadEntityForRemote()
+            invoke().saveResponseToLocal(entity)
         }
-    }.catch {
-        val value = invoke().loadEntityForRemote()
-        invoke().saveResponseToLocal(value)
-        emit(value)
+        return entity
     }
 
-    fun obtainOssClient() = obtainOssEntity().map {
+
+    /*
+    fun obtainOssClient() = obtainOssEntityByFlow().map {
         ossClient(it)
     }
+    */
 
 }

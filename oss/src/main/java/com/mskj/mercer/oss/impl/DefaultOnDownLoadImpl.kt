@@ -14,70 +14,72 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import java.io.*
 
-
+@Suppress("BlockingMethodInNonBlockingContext")
 class DefaultOnDownLoadImpl : OnDownLoad {
-
-    override fun fetch(key: String?): Flow<InputStream> = fetch(key, OssManager().ploy())
-
-    @Suppress("DeprecatedCallableAddReplaceWith")
-    @Deprecated("recommended use Ploy.DEFAULT")
-    override fun fetch(key: String?, ploy: Ploy): Flow<InputStream> =
-        if (key.isNullOrBlank()) {
-            flow {
-                throw NullPointerException("key can not be null.")
-            }
-        } else {
-            OssManager().obtainOssEntity().map {
-                if (ploy == Ploy.HTTP) {
-                    httpFetchFile(it, key)
-                } else {
-                    defaultFetchFile(it, key, null, null)
-                }
-            }
-        }
 
     override fun downLoad(
         key: String?, file: File, interval: Interval?, onProgressListener: ((Long, Long) -> Unit)?
-    ): Flow<File> = if (key.isNullOrBlank()) {
-        flow {
-            throw NullPointerException("key can not be null.")
-        }
-    } else {
-        OssManager().obtainOssEntity().map {
-            defaultFetchFile(it, key, interval, onProgressListener)
-        }.map {
-            file.mkdirs()
-            if (file.exists()) {
-                file.delete()
-            }
-            file.writeBytes(it.readBytes())
-            file
-        }
+    ): Flow<File> = flow {
+        val result = pull(key, file, interval, onProgressListener)
+        emit(result)
     }
 
     override fun downLoadByStream(
         key: String?, file: File, interval: Interval?, onProgressListener: ((Long, Long) -> Unit)?
-    ): Flow<File> = if (key.isNullOrBlank()) {
-        flow {
+    ): Flow<File> = flow {
+        val result = pullByStream(key, file, interval, onProgressListener)
+        emit(result)
+    }.flowOn(Dispatchers.IO)
+
+    override suspend fun pull(
+        key: String?, file: File, interval: Interval?, onProgressListener: ((Long, Long) -> Unit)?
+    ): File {
+        if (key.isNullOrBlank()) {
             throw NullPointerException("key can not be null.")
         }
-    } else {
-        OssManager().obtainOssEntity().map { ossEntity ->
-            val get = GetObjectRequest(ossEntity.bucket, key)
-            get.setProgressListener { _, currentSize, totalSize ->
-                onProgressListener?.invoke(currentSize, totalSize)
-            }
-            interval?.convert()?.let {
-                get.range = it
-            }
-            val oss = OssManager.ossClient(ossEntity)
-
+        val entity = OssManager().obtainOssEntity()
+        var inputStream: InputStream? = null
+        try {
+            inputStream = defaultFetchFile(entity, key, interval, onProgressListener)
             file.mkdirs()
             if (file.exists()) {
                 file.delete()
             }
-            val outStream = FileOutputStream(file)
+            file.writeBytes(inputStream.readBytes())
+        } catch (e: Exception) {
+            throw e
+        } finally {
+            inputStream?.close()
+        }
+        return file
+    }
 
+    override suspend fun pullByStream(
+        key: String?,
+        file: File,
+        interval: Interval?,
+        onProgressListener: ((Long, Long) -> Unit)?
+    ): File {
+        if (key.isNullOrBlank()) {
+            throw NullPointerException("key can not be null.")
+        }
+        val entity = OssManager().obtainOssEntity()
+        val get = GetObjectRequest(entity.bucket, key)
+        get.setProgressListener { _, currentSize, totalSize ->
+            onProgressListener?.invoke(currentSize, totalSize)
+        }
+        interval?.convert()?.let {
+            get.range = it
+        }
+        val oss = OssManager.ossClient(entity)
+
+        file.mkdirs()
+        if (file.exists()) {
+            file.delete()
+        }
+        var outStream: FileOutputStream? = null
+        try {
+            outStream = FileOutputStream(file)
             // 同步执行下载请求，返回结果
             val getResult: GetObjectResult = oss.getObject(get)
             // 获取文件输入流
@@ -88,11 +90,13 @@ class DefaultOnDownLoadImpl : OnDownLoad {
                 outStream.write(buffer, 0, len)
             }
             outStream.flush()
-            outStream.close()
-            file
-        }.flowOn(Dispatchers.IO)
+        } catch (e: Exception) {
+            throw e
+        } finally {
+            outStream?.close()
+        }
+        return file
     }
-
 
     companion object {
 
