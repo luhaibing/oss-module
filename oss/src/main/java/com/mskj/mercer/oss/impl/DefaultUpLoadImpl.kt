@@ -10,6 +10,7 @@ import com.alibaba.sdk.android.oss.model.PutObjectResult
 import com.blankj.utilcode.util.UriUtils
 import com.mskj.mercer.oss.OssManager
 import com.mskj.mercer.oss.action.UpLoad
+import com.mskj.mercer.oss.model.Motion
 import com.mskj.mercer.oss.model.OssEntity
 import com.mskj.mercer.oss.throwable.OssException
 import kotlinx.coroutines.CompletableDeferred
@@ -62,7 +63,7 @@ class DefaultUpLoadImpl : UpLoad<String> {
         put.setProgressCallback { _, currentSize, totalSize ->
             onProgressListener?.invoke(currentSize, totalSize)
         }
-        val ossClient = OssManager.ossClient(it)
+        val ossClient = OssManager.ossClient(Motion.PUSH,it)
         ossClient.asyncPutObject(put,
             object : OSSCompletedCallback<PutObjectRequest, PutObjectResult> {
                 override fun onSuccess(

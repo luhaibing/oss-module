@@ -12,6 +12,7 @@ import com.mskj.mercer.oss.action.UpLoad
 import com.mskj.mercer.oss.impl.DefaultOnDownLoadImpl
 import com.mskj.mercer.oss.impl.DefaultOnEntityManagerImpl
 import com.mskj.mercer.oss.impl.DefaultUpLoadImpl
+import com.mskj.mercer.oss.model.Motion
 import com.mskj.mercer.oss.model.OssEntity
 import com.mskj.mercer.oss.model.Ploy
 import com.mskj.mercer.oss.throwable.TokenExpirationException
@@ -56,13 +57,28 @@ class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityMa
         fun ossClient(
             entity: OssEntity,
             conf: ClientConfiguration = defaultClientConfiguration()
+        ): OSSClient = ossClient(Motion.PULL, entity, conf)
+
+        fun ossClient(
+            motion: Motion,
+            entity: OssEntity,
+            conf: ClientConfiguration = defaultClientConfiguration()
         ): OSSClient {
             val ossCredentialProvider = OSSStsTokenCredentialProvider(
                 entity.accessKeyId,
                 entity.secretKeyId,
                 entity.securityToken
             )
-            return OSSClient(invoke().context(), entity.endpoint, ossCredentialProvider, conf)
+            return OSSClient(
+                invoke().context(), when (motion) {
+                    Motion.PUSH -> {
+                        entity.push
+                    }
+                    else -> {
+                        entity.pull
+                    }
+                }, ossCredentialProvider, conf
+            )
         }
 
         private fun defaultClientConfiguration(): ClientConfiguration {
@@ -135,16 +151,16 @@ class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityMa
     fun obtainOssEntity() = flow {
         emit(invoke().loadEntityForLocal())
     }.onEach {
-            val currentTimeMillis = System.currentTimeMillis()
-            if (it.timestamp + it.expires < currentTimeMillis) {
-                // 过期
-                throw TokenExpirationException()
-            }
-        }.catch {
-            val value = invoke().loadEntityForRemote()
-            invoke().saveResponseToLocal(value)
-            emit(value)
+        val currentTimeMillis = System.currentTimeMillis()
+        if (it.timestamp + it.expires < currentTimeMillis) {
+            // 过期
+            throw TokenExpirationException()
         }
+    }.catch {
+        val value = invoke().loadEntityForRemote()
+        invoke().saveResponseToLocal(value)
+        emit(value)
+    }
 
     fun obtainOssClient() = obtainOssEntity().map {
         ossClient(it)

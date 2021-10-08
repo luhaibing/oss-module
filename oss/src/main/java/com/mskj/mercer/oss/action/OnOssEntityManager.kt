@@ -11,4 +11,5 @@ interface OnOssEntityManager {
     fun loadEntityForLocal(): OssEntity
 
     fun ossEntityRemoteCallBack(block: suspend () -> OssEntity)
+
 }

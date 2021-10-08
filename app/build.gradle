@@ -82,4 +82,5 @@ dependencies {
 
     implementation "com.blankj:utilcodex:1.30.6"
 
+    implementation 'com.squareup.okhttp3:okhttp:4.9.1'
 }

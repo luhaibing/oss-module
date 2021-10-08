@@ -5,6 +5,7 @@ import com.localebro.okhttpprofiler.OkHttpProfilerInterceptor
 import com.mskj.mercer.practice.Result
 import kotlinx.coroutines.Deferred
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.ResponseBody
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -22,7 +23,14 @@ interface OssTokenApi {
 
     companion object {
         fun create(): OssTokenApi {
-            val builder = OkHttpClient.Builder()
+            val builder = OkHttpClient.Builder().addInterceptor { chain ->
+                val request: Request = chain.request()
+                val headers = request.headers.newBuilder()
+                    .add("token", "65aff802-bdf8-4a9d-8338-eb880e750bb6")
+                    .add("lang", "zh_CN")
+                    .build()
+                chain.proceed(request.newBuilder().headers(headers).build())
+            }
             builder.addInterceptor(OkHttpProfilerInterceptor())
             val client = builder.build()
             return Retrofit.Builder()

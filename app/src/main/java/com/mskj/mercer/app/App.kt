@@ -42,7 +42,8 @@ class App : Application() {
                 */
                 val result = response.result
                 OssEntity(
-                    "http://oss-cn-shenzhen.aliyuncs.com",
+                    "https://endpoint.file.ihk.ltd/",
+                    "https://file.ihk.ltd/",
                     result.bucket,
                     result.accessKeyId,
                     result.accessKeySecret,

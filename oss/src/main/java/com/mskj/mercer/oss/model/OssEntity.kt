@@ -4,8 +4,10 @@ import androidx.annotation.Keep
 
 @Keep
 data class OssEntity(
-    // oos 端点
-    val endpoint: String,
+    // 上传 oos 端点
+    val push:String,
+    // 加载 oos 端点
+    val pull:String,
     val bucket: String,
     // 访问密匙Id
     val accessKeyId: String,
