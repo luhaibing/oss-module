@@ -2,12 +2,9 @@ package com.mskj.mercer.app
 
 import android.app.Application
 import android.util.Log
-import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
 import com.mskj.mercer.oss.OssManager
 import com.mskj.mercer.oss.model.OssEntity
 import com.mskj.mercer.oss.model.Ploy
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -55,6 +52,8 @@ class App : Application() {
                 val currentTime = System.currentTimeMillis()
                 val date = Date(currentTime)
                 "android_" + simpleDateFormat.format(date) + "_" + 72 + "_" + currentTime + ".jpg"
+            }, ploy = Ploy.Dynamic { e, k ->
+                Ploy.Splice("https://file.ihk.ltd").process(Unit, k)
             }
         )
     }

@@ -1,7 +1,6 @@
 package com.mskj.mercer.oss.impl
 
 import android.net.Uri
-import android.util.Log
 import com.alibaba.sdk.android.oss.ClientException
 import com.alibaba.sdk.android.oss.ServiceException
 import com.alibaba.sdk.android.oss.callback.OSSCompletedCallback
@@ -16,7 +15,6 @@ import com.mskj.mercer.oss.throwable.OssException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import java.io.File
 
 class DefaultUpLoadImpl : UpLoad<String> {
@@ -47,9 +45,7 @@ class DefaultUpLoadImpl : UpLoad<String> {
         emit(result)
     }
 
-
     //////////////////////////////////////////////////////////////////
-
 
     override suspend fun push(
         input: Uri?,
@@ -71,48 +67,7 @@ class DefaultUpLoadImpl : UpLoad<String> {
             OssManager().obtainOssEntity().upLoadAsync(input, onProgressListener)
         }
 
-
     //////////////////////////////////////////////////////////////////
-
-
-    private fun Flow<OssEntity>.upLoadAsync(
-        input: String,
-        onProgressListener: ((Long, Long) -> Unit)?
-    ): Flow<Pair<String, String>> = map {
-        val deferred = CompletableDeferred<Pair<String, String>>()
-        val key = prepare(input)
-
-        val put = PutObjectRequest(it.bucket, key, input)
-        put.setProgressCallback { _, currentSize, totalSize ->
-            onProgressListener?.invoke(currentSize, totalSize)
-        }
-        val ossClient = OssManager.ossClient(Motion.PUSH, it)
-        ossClient.asyncPutObject(put,
-            object : OSSCompletedCallback<PutObjectRequest, PutObjectResult> {
-                override fun onSuccess(
-                    request: PutObjectRequest?,
-                    result: PutObjectResult?
-                ) {
-                    Log.e("TAG", "onSuccess")
-                    deferred.complete(input to key)
-                }
-
-                override fun onFailure(
-                    request: PutObjectRequest,
-                    clientException: ClientException,
-                    serviceException: ServiceException
-                ) {
-                    deferred.completeExceptionally(
-                        OssException(
-                            request,
-                            clientException,
-                            serviceException
-                        )
-                    )
-                }
-            })
-        deferred.await()
-    }
 
     private suspend fun OssEntity.upLoadAsync(
         input: String,
@@ -126,7 +81,8 @@ class DefaultUpLoadImpl : UpLoad<String> {
             onProgressListener?.invoke(currentSize, totalSize)
         }
         val ossClient = OssManager.ossClient(Motion.PUSH, this)
-        ossClient.asyncPutObject(put,
+        ossClient.asyncPutObject(
+            put,
             object : OSSCompletedCallback<PutObjectRequest, PutObjectResult> {
                 override fun onSuccess(
                     request: PutObjectRequest?,

@@ -1,11 +1,8 @@
 package com.mskj.mercer.oss.action
 
-import com.mskj.mercer.oss.OssManager
 import com.mskj.mercer.oss.model.Interval
-import com.mskj.mercer.oss.model.Ploy
 import kotlinx.coroutines.flow.Flow
 import java.io.File
-import java.io.InputStream
 
 interface OnDownLoad {
 

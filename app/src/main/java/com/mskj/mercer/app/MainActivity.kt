@@ -20,7 +20,7 @@ import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
-    val pic3 = "android_20211008_72_1633680153880.jpg"
+    val pic3 = "admin_1631774527807"
     val pic4 =
         "http://mswm-private-bucket.oss-cn-shenzhen.aliyuncs.com/android_20210524_1343_1621823709218.jpg?Expires=1624969616&OSSAccessKeyId=STS.NUq3BkYuK5Wwa22rqTGbxKEgT&Signature=00pxO1YtNBHATHzkj4ndw2gDfHg%3D&security-token=CAIS%2BgF1q6Ft5B2yfSjIr5bEePjftKpqgpWcYxSDlnEBS%2B1UpIDMtjz2IH9JfHhuBOkct/81nW1Y7f4clr1pTJtIclfJdtBx6ZJg%2BAWteY3At5RUISO5Rdr3d1KIAjvXgeXwAYygPv6/F96pb1fb7FwRpZLxaTSlWXG8LJSNkuQJR98LXw6%2BH1EkbZUsUWkEksIBMmbLPvuAKwPjhnGqbHBloQ1hk2hym8/dq4%2B%2BkkOD0AygkrJF/NSofsT%2BMphWUc0hA4vv7otfbbHc1SNc0R9O%2BZptgbZMkTW95Y7AWwgPvkzcarGOq4A/d1cnfMchB7Veq/zxhRbWeDlSYAydGoABpBb5P1BHfq%2B4xEyvqkFrhxMVC5y68J3TWrBKqjqSTdqc99GCSqPUvl3t2vFk891sW0Kgce7rLj0BwMaFYiA7ttccjvPHP2YqMvOJcGnzWIVfN9bFk4%2Bhup2N%2BkBWz3YbCBcy9rt68kT4q9IxmLdYaNVEepyzB/FfCayX%2BI2yMC4%3D"
     val pic5 = "android_20210629_1343_1624934248869.jpg"

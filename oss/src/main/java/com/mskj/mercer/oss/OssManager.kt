@@ -15,8 +15,9 @@ import com.mskj.mercer.oss.impl.DefaultUpLoadImpl
 import com.mskj.mercer.oss.model.Motion
 import com.mskj.mercer.oss.model.OssEntity
 import com.mskj.mercer.oss.model.Ploy
-import com.mskj.mercer.oss.throwable.TokenExpirationException
-import kotlinx.coroutines.flow.*
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.ResponseBody
 import java.io.InputStream
 
 @Suppress("unused")
@@ -27,20 +28,11 @@ class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityMa
 
     private lateinit var context: Context
 
-    private var ploy: Ploy = Ploy.DEFAULT
+    private var ploy: Ploy<*> = Ploy.Default
 
     fun context() = context
 
-    private var dataFetcher: (suspend (String) -> InputStream)? = null
-
-    suspend fun dataFetcher(value: String) = dataFetcher?.invoke(value)
-
     fun ploy() = ploy
-
-    // glide 加载时,直接拼接路径的方式
-    private var splice: ((String) -> String)? = null
-
-    fun splice() = splice
 
     private object Holder {
         @SuppressLint("StaticFieldLeak")
@@ -96,50 +88,34 @@ class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityMa
     }
 
     /**
+     * @param   ctx                         上下文对象
      * @param   onOssEntityCallBack 更新ossToken
-     * @param   dataFetcher         使用使用非default方法加载图片时,拉取图片的回调
      * @param   convert             上传图片时的生成key
      * @param   ploy                策略
-     * @param   splice              直接拼接图片路径时的方式
      */
     fun initialize(
         ctx: Context,
         onOssEntityCallBack: OnOssEntityCallBack,
         convert: (String) -> String,
-        dataFetcher: (suspend (String) -> InputStream)? = null,
-        ploy: Ploy = Ploy.DEFAULT,
-        splice: ((String) -> String)? = null
+        ploy: Ploy<*> = Ploy.Default,
     ) {
-        initialize(
-            ctx,
-            onOssEntityCallBack::loadEntityForRemote,
-            convert,
-            dataFetcher,
-            ploy,
-            splice
-        )
+        initialize(ctx, onOssEntityCallBack::loadEntityForRemote, convert, ploy)
     }
 
     /**
      * @param   ctx                         上下文对象
      * @param   onLoadOssEntityForRemote    更新ossToken
-     * @param   dataFetcher                 使用使用非default方法加载图片时,拉取图片的回调
      * @param   convert                     上传图片时的生成key
      * @param   ploy                        策略
-     * @param   splice                      直接拼接图片路径时的方式
      */
     fun initialize(
         ctx: Context,
         onLoadOssEntityForRemote: suspend () -> OssEntity,
         convert: (String) -> String,
-        dataFetcher: (suspend (String) -> InputStream)? = null,
-        ploy: Ploy = Ploy.DEFAULT,
-        splice: ((String) -> String)? = null
+        ploy: Ploy<*> = Ploy.Default,
     ) {
         this.context = ctx
-        this.splice = splice
         this.ploy = ploy
-        this.dataFetcher = dataFetcher
         ossEntityRemoteCallBack(onLoadOssEntityForRemote)
         prepare(convert)
     }
@@ -147,23 +123,21 @@ class OssManager private constructor() : OnOssEntityManager by DefaultOnEntityMa
     /**
      * 获取 AliOssEntity
      */
+    @Throws(Exception::class)
     suspend fun obtainOssEntity(): OssEntity {
-        var entity = invoke().loadEntityForLocal()
-        // 验证是否过期
+        var entity = try {
+            invoke().loadEntityForLocal()
+        } catch (e: Exception) {
+            null
+        }
         val currentTimeMillis = System.currentTimeMillis()
-        if (entity.timestamp + entity.expires < currentTimeMillis) {
-            // 过期
+        if (entity == null || entity.timestamp + entity.expires < currentTimeMillis) {
+            // 没有缓存或者已过期
             entity = invoke().loadEntityForRemote()
             invoke().saveResponseToLocal(entity)
+            return entity
         }
         return entity
     }
-
-
-    /*
-    fun obtainOssClient() = obtainOssEntityByFlow().map {
-        ossClient(it)
-    }
-    */
 
 }

@@ -8,10 +8,7 @@ import java.io.InputStream
 class OssModelLoader : ModelLoader<String, InputStream> {
 
     override fun buildLoadData(
-        model: String,
-        width: Int,
-        height: Int,
-        options: Options
+        model: String, width: Int, height: Int, options: Options
     ): ModelLoader.LoadData<InputStream> {
         return ModelLoader.LoadData(GlideUrl(model),OssDataFetcher(model))
     }

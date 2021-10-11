@@ -12,6 +12,9 @@ import com.mskj.mercer.oss.throwable.OssException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.ResponseBody
 import java.io.*
 
 @Suppress("BlockingMethodInNonBlockingContext")
@@ -98,7 +101,12 @@ class DefaultOnDownLoadImpl : OnDownLoad {
         return file
     }
 
+
     companion object {
+
+        private val client by lazy {
+            OkHttpClient()
+        }
 
         suspend fun defaultFetchFile(
             it: OssEntity,
@@ -147,23 +155,34 @@ class DefaultOnDownLoadImpl : OnDownLoad {
             return deferred.await()
         }
 
+        /*
         suspend fun httpFetchFile(it: OssEntity, key: String): InputStream {
             val url = OssManager.ossClient(it).presignConstrainedObjectURL(
                 it.bucket, key, it.expires
             )
             return httpFetchFile(url)
         }
+        */
 
-        suspend fun httpFetchFile(url: String): InputStream {
+        suspend fun okHttpFetchFile(url: String): InputStream {
             val deferred = CompletableDeferred<InputStream>()
             try {
-                val result = OssManager().dataFetcher(url)
+                val result = dataFetcher(url)
                     ?: throw NullPointerException("result can not be null.")
                 deferred.complete(result)
             } catch (e: Exception) {
                 deferred.completeExceptionally(e)
             }
             return deferred.await()
+        }
+
+        private fun dataFetcher(value: String): InputStream? {
+            //获取请求对象
+            val request = Request.Builder().url(value).build()
+            //获取响应体
+            val body: ResponseBody? = client.newCall(request).execute().body
+            //获取流
+            return body?.byteStream()
         }
 
     }

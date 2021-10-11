@@ -26,7 +26,7 @@ interface OssTokenApi {
             val builder = OkHttpClient.Builder().addInterceptor { chain ->
                 val request: Request = chain.request()
                 val headers = request.headers.newBuilder()
-                    .add("token", "65aff802-bdf8-4a9d-8338-eb880e750bb6")
+                    .add("token", "3c6be58b-ef29-4d05-9dc7-1a3b3675308e")
                     .add("lang", "zh_CN")
                     .build()
                 chain.proceed(request.newBuilder().headers(headers).build())

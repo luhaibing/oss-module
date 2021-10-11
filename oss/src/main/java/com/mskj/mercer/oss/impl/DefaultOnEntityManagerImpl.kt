@@ -12,7 +12,7 @@ class DefaultOnEntityManagerImpl : OnOssEntityManager {
 
     private val gson by lazy { Gson() }
 
-   override fun ossEntityRemoteCallBack(block: suspend () -> OssEntity) {
+    override fun ossEntityRemoteCallBack(block: suspend () -> OssEntity) {
         ossEntityRemoteCallBack = block
     }
 
@@ -24,11 +24,10 @@ class DefaultOnEntityManagerImpl : OnOssEntityManager {
         return ossEntityRemoteCallBack()
     }
 
-    override fun loadEntityForLocal(): OssEntity {
-        return Gson().fromJson(
-            SPUtils.getInstance().getString(KEY_ALI_OSS_TOKEN),
-            OssEntity::class.java
-        ) ?: throw NullPointerException("local response is null.")
+    override fun loadEntityForLocal(): OssEntity? {
+        val json = SPUtils.getInstance().getString(KEY_ALI_OSS_TOKEN) ?: return null
+        return Gson().fromJson(json, OssEntity::class.java)
+            ?: throw NullPointerException("local response is null.")
     }
 
 }
